@@ -2,12 +2,30 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ContractsService } from '../contracts.service';
 import { ContractEntity } from '../entities/contract.entity';
-import { Repository, UpdateResult } from 'typeorm';
+import { CustomerEntity } from '../../customers/entities/customer.entity';
+import { Repository } from 'typeorm';
 import { CreateContractDto } from '../dto/create-contract.dto';
+import { ContractStatus } from '../../common/enums/contract-status.enum';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('ContractsService', () => {
   let service: ContractsService;
-  let repository: Repository<ContractEntity>;
+  let contractsRepository: Repository<ContractEntity>;
+  let customersRepository: Repository<CustomerEntity>;
+
+  const baseDto: CreateContractDto = {
+    number: '12345',
+    acquisitionDate: '2024-01-01T00:00:00.000Z',
+    value: 1000,
+    status: ContractStatus.ON_SCHEDULE,
+    customer: 1,
+  };
+
+  const baseEntity: ContractEntity = {
+    id: 1,
+    ...baseDto,
+    customer: { id: 1, name: 'Customer' } as CustomerEntity,
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -19,17 +37,25 @@ describe('ContractsService', () => {
             create: jest.fn(),
             save: jest.fn(),
             find: jest.fn(),
-            findOneBy: jest.fn(),
+            findOne: jest.fn(),
             update: jest.fn(),
-            delete: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(CustomerEntity),
+          useValue: {
+            findOneBy: jest.fn(),
           },
         },
       ],
     }).compile();
 
     service = module.get<ContractsService>(ContractsService);
-    repository = module.get<Repository<ContractEntity>>(
+    contractsRepository = module.get<Repository<ContractEntity>>(
       getRepositoryToken(ContractEntity),
+    );
+    customersRepository = module.get<Repository<CustomerEntity>>(
+      getRepositoryToken(CustomerEntity),
     );
   });
 
@@ -38,106 +64,72 @@ describe('ContractsService', () => {
   });
 
   it('should create a contract', async () => {
-    const contractDto: CreateContractDto = {
-      name: 'Contract Name',
-      description: 'Contract Description',
-      startDate: '2024-01-01T00:00:00.000Z',
-      endDate: '2024-12-31T00:00:00.000Z',
-      client: 'Client Name',
-      value: 1000,
-      status: 'Active',
-    };
+    jest
+      .spyOn(customersRepository, 'findOneBy')
+      .mockResolvedValue({ id: 1 } as any);
+    jest.spyOn(contractsRepository, 'create').mockReturnValue(baseEntity);
+    jest.spyOn(contractsRepository, 'save').mockResolvedValue(baseEntity);
 
-    const result: ContractEntity = {
-      id: 1,
-      name: contractDto.name,
-      description: contractDto.description,
-      startDate: new Date(contractDto.startDate),
-      endDate: new Date(contractDto.endDate),
-      client: contractDto.client,
-      value: contractDto.value,
-      status: contractDto.status,
-    };
-
-    jest.spyOn(repository, 'create').mockReturnValue(result);
-    jest.spyOn(repository, 'save').mockResolvedValue(result);
-
-    expect(await service.create(contractDto)).toEqual(result);
+    expect(await service.create(baseDto)).toEqual(baseEntity);
   });
 
-  it('should return all contracts', async () => {
-    const result: ContractEntity[] = [
-      {
-        id: 1,
-        name: 'Contract Name',
-        description: 'Contract Description',
-        startDate: new Date('2024-01-01T00:00:00.000Z'),
-        endDate: new Date('2024-12-31T00:00:00.000Z'),
-        client: 'Client Name',
-        value: 1000,
-        status: 'Active',
-      },
-    ];
+  it('should throw an error if customer ID is invalid', async () => {
+    jest.spyOn(customersRepository, 'findOneBy').mockResolvedValue(null);
 
-    jest.spyOn(repository, 'find').mockResolvedValue(result);
-
-    expect(await service.findAll()).toEqual(result);
+    await expect(service.create(baseDto)).rejects.toThrow(BadRequestException);
   });
 
-  it('should return a single contract', async () => {
-    const result: ContractEntity = {
-      id: 1,
-      name: 'Contract Name',
-      description: 'Contract Description',
-      startDate: new Date('2024-01-01T00:00:00.000Z'),
-      endDate: new Date('2024-12-31T00:00:00.000Z'),
-      client: 'Client Name',
-      value: 1000,
-      status: 'Active',
-    };
+  it('should return all contracts for a customer', async () => {
+    const result: ContractEntity[] = [baseEntity];
+    jest.spyOn(contractsRepository, 'find').mockResolvedValue(result);
 
-    jest.spyOn(repository, 'findOneBy').mockResolvedValue(result);
-
-    expect(await service.findOne(1)).toEqual(result);
+    expect(await service.findAll(1)).toEqual(result);
   });
 
-  it('should update a contract', async () => {
-    const contractDto: CreateContractDto = {
-      name: 'Updated Contract Name',
-      description: 'Updated Contract Description',
-      startDate: '2024-01-01T00:00:00.000Z',
-      endDate: '2024-12-31T00:00:00.000Z',
-      client: 'Updated Client Name',
-      value: 2000,
-      status: 'Inactive',
-    };
+  it('should return a single contract for a customer', async () => {
+    jest.spyOn(contractsRepository, 'findOne').mockResolvedValue(baseEntity);
 
-    const result: ContractEntity = {
-      id: 1,
-      name: contractDto.name,
-      description: contractDto.description,
-      startDate: new Date(contractDto.startDate),
-      endDate: new Date(contractDto.endDate),
-      client: contractDto.client,
-      value: contractDto.value,
-      status: contractDto.status,
-    };
-
-    const updateResult: UpdateResult = {
-      generatedMaps: [],
-      raw: [],
-      affected: 1,
-    };
-
-    jest.spyOn(repository, 'update').mockResolvedValue(updateResult);
-    jest.spyOn(repository, 'findOneBy').mockResolvedValue(result);
-
-    expect(await service.update(1, contractDto)).toEqual(result);
+    expect(await service.findOne(1)).toEqual(baseEntity);
   });
 
-  it('should delete a contract', async () => {
-    jest.spyOn(repository, 'delete').mockResolvedValue({} as any);
+  it('should throw an error if contract not found', async () => {
+    jest.spyOn(contractsRepository, 'findOne').mockResolvedValue(null);
 
-    expect(await service.remove(1)).toBeUndefined();
+    await expect(service.findOne(1)).rejects.toThrow(NotFoundException);
+  });
+
+  it('should update a contract for a customer', async () => {
+    const updateResult = { affected: 1 };
+    jest.spyOn(contractsRepository, 'findOne').mockResolvedValue(baseEntity);
+    jest
+      .spyOn(contractsRepository, 'update')
+      .mockResolvedValue(updateResult as any);
+
+    expect(await service.update(1, 1, baseDto)).toEqual(updateResult.affected);
+  });
+
+  it('should throw an error if contract not found during update', async () => {
+    jest.spyOn(contractsRepository, 'findOne').mockResolvedValue(null);
+
+    await expect(service.update(1, 1, baseDto)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('should cancel a contract for a customer', async () => {
+    const canceledContract = {
+      ...baseEntity,
+      status: ContractStatus.CANCELED,
+    };
+    jest.spyOn(contractsRepository, 'findOne').mockResolvedValue(baseEntity);
+    jest.spyOn(contractsRepository, 'save').mockResolvedValue(canceledContract);
+
+    expect(await service.cancel(1, 1)).toEqual(canceledContract);
+  });
+
+  it('should throw an error if contract not found during cancellation', async () => {
+    jest.spyOn(contractsRepository, 'findOne').mockResolvedValue(null);
+
+    await expect(service.cancel(1, 1)).rejects.toThrow(NotFoundException);
   });
 });
