@@ -16,32 +16,36 @@ export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}
 
   @Post()
-  create(
+  async create(
     @Body() createContractDto: CreateContractDto,
   ): Promise<ContractEntity> {
     return this.contractsService.create(createContractDto);
   }
 
-  @Get()
-  findAll(): Promise<ContractEntity[]> {
-    return this.contractsService.findAll();
+  @Get('/user/:id')
+  async findAll(@Param('id') id: string): Promise<ContractEntity[]> {
+    return this.contractsService.findAll(+id);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<ContractEntity> {
+  async findOne(@Param('id') id: string): Promise<ContractEntity> {
     return this.contractsService.findOne(+id);
   }
 
-  @Put(':id')
-  update(
+  @Put(':id/user/:userId')
+  async update(
     @Param('id') id: string,
+    @Param('userId') userId: string,
     @Body() createContractDto: CreateContractDto,
-  ): Promise<ContractEntity> {
-    return this.contractsService.update(+id, createContractDto);
+  ): Promise<number> {
+    return this.contractsService.update(+userId, +id, createContractDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string): Promise<void> {
-    return this.contractsService.remove(+id);
+  @Delete(':id/:userId/cancel')
+  async cancel(
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+  ): Promise<ContractEntity> {
+    return this.contractsService.cancel(+userId, +id);
   }
 }

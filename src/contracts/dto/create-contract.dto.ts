@@ -1,49 +1,23 @@
-import { IsNotEmpty, IsNumber, IsString, IsDateString } from 'class-validator';
+import { IsNotEmpty, IsEnum, IsDateString, IsNumber } from 'class-validator';
+import { ContractStatus } from '../../common/enums/contract-status.enum';
 
 export class CreateContractDto {
   @IsNotEmpty()
-  @IsString()
-  readonly name: string;
+  readonly number: string;
 
-  @IsNotEmpty()
-  @IsString()
-  readonly description: string;
-
-  @IsNotEmpty()
   @IsDateString()
-  readonly startDate: string;
+  readonly acquisitionDate: string;
 
-  @IsNotEmpty()
-  @IsDateString()
-  readonly endDate: string;
-
-  @IsNotEmpty()
-  @IsString()
-  readonly client: string;
-
-  @IsNotEmpty()
   @IsNumber()
   readonly value: number;
 
-  @IsNotEmpty()
-  @IsString()
-  readonly status: string;
+  @IsEnum(ContractStatus)
+  readonly status: ContractStatus;
 
-  constructor(
-    name: string,
-    description: string,
-    startDate: string,
-    endDate: string,
-    client: string,
-    value: number,
-    status: string,
-  ) {
-    this.name = name;
-    this.description = description;
-    this.startDate = startDate;
-    this.endDate = endDate;
-    this.client = client;
-    this.value = value;
-    this.status = status;
+  @IsNotEmpty()
+  readonly customer: number;
+
+  constructor(partial: Partial<CreateContractDto>) {
+    Object.assign(this, partial);
   }
 }

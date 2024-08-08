@@ -1,28 +1,30 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { CustomerEntity } from '../../customers/entities/customer.entity';
+import { ContractStatus } from '../../common/enums/contract-status.enum';
 
-@Entity()
+@Entity('contracts')
 export class ContractEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  name: string;
+  number: string;
 
   @Column()
-  description: string;
-
-  @Column('date')
-  startDate: Date;
-
-  @Column('date')
-  endDate: Date;
+  acquisitionDate: string;
 
   @Column()
-  client: string;
-
-  @Column('decimal')
   value: number;
 
-  @Column()
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: ContractStatus,
+    default: ContractStatus.ON_SCHEDULE,
+  })
+  status: ContractStatus;
+
+  @ManyToOne(() => CustomerEntity, (customer) => customer.contracts, {
+    onDelete: 'CASCADE',
+  })
+  customer: CustomerEntity;
 }
