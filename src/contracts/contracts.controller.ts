@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ContractsService } from './contracts.service';
 import { CreateContractDto } from './dto/create-contract.dto';
-import { ContractsEntity } from './entities/contracts.entity';
+import { ContractEntity } from './entities/contract.entity';
 
 @Controller('contracts')
 export class ContractsController {
@@ -18,17 +18,17 @@ export class ContractsController {
   @Post()
   create(
     @Body() createContractDto: CreateContractDto,
-  ): Promise<ContractsEntity> {
+  ): Promise<ContractEntity> {
     return this.contractsService.create(createContractDto);
   }
 
   @Get()
-  findAll(): Promise<ContractsEntity[]> {
+  findAll(): Promise<ContractEntity[]> {
     return this.contractsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<ContractsEntity> {
+  findOne(@Param('id') id: string): Promise<ContractEntity> {
     return this.contractsService.findOne(+id);
   }
 
@@ -36,7 +36,7 @@ export class ContractsController {
   update(
     @Param('id') id: string,
     @Body() createContractDto: CreateContractDto,
-  ): Promise<ContractsEntity> {
+  ): Promise<ContractEntity> {
     return this.contractsService.update(+id, createContractDto);
   }
 

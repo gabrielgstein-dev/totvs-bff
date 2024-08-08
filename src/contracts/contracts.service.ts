@@ -1,33 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ContractsEntity } from './entities/contracts.entity';
+import { ContractEntity } from './entities/contract.entity';
 import { CreateContractDto } from './dto/create-contract.dto';
 
 @Injectable()
 export class ContractsService {
   constructor(
-    @InjectRepository(ContractsEntity)
-    private contractsRepository: Repository<ContractsEntity>,
+    @InjectRepository(ContractEntity)
+    private contractsRepository: Repository<ContractEntity>,
   ) {}
 
-  async create(createContractDto: CreateContractDto): Promise<ContractsEntity> {
+  async create(createContractDto: CreateContractDto): Promise<ContractEntity> {
     const contract = this.contractsRepository.create(createContractDto);
     return this.contractsRepository.save(contract);
   }
 
-  async findAll(): Promise<ContractsEntity[]> {
+  async findAll(): Promise<ContractEntity[]> {
     return this.contractsRepository.find();
   }
 
-  async findOne(id: number): Promise<ContractsEntity> {
+  async findOne(id: number): Promise<ContractEntity> {
     return this.contractsRepository.findOneBy({ id });
   }
 
   async update(
     id: number,
     createContractDto: CreateContractDto,
-  ): Promise<ContractsEntity> {
+  ): Promise<ContractEntity> {
     await this.contractsRepository.update(id, createContractDto);
     return this.contractsRepository.findOneBy({ id });
   }
