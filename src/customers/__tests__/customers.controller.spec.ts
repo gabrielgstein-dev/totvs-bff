@@ -3,25 +3,33 @@ import { CustomersController } from '../customers.controller';
 import { CustomersService } from '../customers.service';
 import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { CustomerEntity } from '../entities/customer.entity';
-import { BadRequestException } from '@nestjs/common';
-import { CustomerStatus } from '../../common/enums/customer-status.enum';
-import { ICreateCustomerDto } from '../../common/interfaces/create-customer.dto.interface';
+import { ContractStatus } from '../../common/enums/contract-status.enum';
 
 describe('CustomersController', () => {
   let controller: CustomersController;
   let service: CustomersService;
 
-  const baseDto: ICreateCustomerDto = {
+  const baseDto = {
     name: 'Test Customer',
     email: 'test@example.com',
     phone: '123456789',
     address: '123 Test St',
-    status: CustomerStatus.DENTRO_DO_PRAZO,
+    cpf: '11144477735',
   };
 
   const baseEntity: CustomerEntity = {
     id: 1,
     ...baseDto,
+    contracts: [
+      {
+        id: 1,
+        number: '12345',
+        acquisitionDate: '2024-01-01T00:00:00.000Z',
+        value: 1000,
+        status: ContractStatus.ON_SCHEDULE,
+        customer: null,
+      },
+    ],
   };
 
   beforeEach(async () => {
@@ -32,7 +40,7 @@ describe('CustomersController', () => {
           provide: CustomersService,
           useValue: {
             create: jest.fn(),
-            findAllWithFilters: jest.fn(),
+            findAll: jest.fn(),
             findOne: jest.fn(),
             update: jest.fn(),
             remove: jest.fn(),
@@ -49,49 +57,30 @@ describe('CustomersController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should create a customer with valid CPF', async () => {
-    const customerDto = new CreateCustomerDto({
-      ...baseDto,
-      cpf: '11144477735',
-    });
+  it('should create a customer', async () => {
+    const customerDto = new CreateCustomerDto(baseDto);
 
-    const result = { ...baseEntity, cpf: '11144477735' };
+    jest.spyOn(service, 'create').mockResolvedValue(baseEntity);
 
-    jest.spyOn(service, 'create').mockResolvedValue(result);
-
-    expect(await controller.create(customerDto)).toEqual(result);
-  });
-
-  it('should create a customer with valid CNPJ', async () => {
-    const customerDto = new CreateCustomerDto({
-      ...baseDto,
-      cnpj: '12345678000195',
-    });
-
-    const result = { ...baseEntity, cnpj: '12345678000195' };
-
-    jest.spyOn(service, 'create').mockResolvedValue(result);
-
-    expect(await controller.create(customerDto)).toEqual(result);
+    expect(await controller.create(customerDto)).toEqual(baseEntity);
   });
 
   it('should return all customers', async () => {
     const result: CustomerEntity[] = [baseEntity];
 
-    jest.spyOn(service, 'findAllWithFilters').mockResolvedValue(result);
+    jest.spyOn(service, 'findAll').mockResolvedValue(result);
 
     const customers = await controller.findAll();
     expect(customers).toEqual(result);
   });
 
-  it('should return all customers with a specific status', async () => {
+  it('should return customers with contracts of a specific status', async () => {
     const result: CustomerEntity[] = [baseEntity];
 
-    jest.spyOn(service, 'findAllWithFilters').mockResolvedValue(result);
+    jest.spyOn(service, 'findAll').mockResolvedValue(result);
 
-    expect(await controller.findAll(CustomerStatus.DENTRO_DO_PRAZO)).toEqual(
-      result,
-    );
+    const customers = await controller.findAll(ContractStatus.PAST_DUE);
+    expect(customers).toEqual(result);
   });
 
   it('should return a single customer', async () => {
@@ -100,69 +89,17 @@ describe('CustomersController', () => {
     expect(await controller.findOne('1')).toEqual(baseEntity);
   });
 
-  it('should update a customer with valid CPF', async () => {
-    const customerDto = new CreateCustomerDto({
-      ...baseDto,
-      cpf: '11144477735',
-      status: CustomerStatus.PAGO,
-    });
+  it('should update a customer', async () => {
+    const customerDto = new CreateCustomerDto(baseDto);
 
-    const result = {
-      ...baseEntity,
-      cpf: '11144477735',
-      status: CustomerStatus.PAGO,
-    };
+    jest.spyOn(service, 'update').mockResolvedValue(baseEntity);
 
-    jest.spyOn(service, 'update').mockResolvedValue(result);
-
-    expect(await controller.update('1', customerDto)).toEqual(result);
-  });
-
-  it('should update a customer with valid CNPJ', async () => {
-    const customerDto = new CreateCustomerDto({
-      ...baseDto,
-      cnpj: '12345678000195',
-      status: CustomerStatus.PAGO,
-    });
-
-    const result = {
-      ...baseEntity,
-      cnpj: '12345678000195',
-      status: CustomerStatus.PAGO,
-    };
-
-    jest.spyOn(service, 'update').mockResolvedValue(result);
-
-    expect(await controller.update('1', customerDto)).toEqual(result);
+    expect(await controller.update('1', customerDto)).toEqual(baseEntity);
   });
 
   it('should delete a customer', async () => {
-    jest.spyOn(service, 'remove').mockResolvedValue(undefined);
+    jest.spyOn(service, 'remove').mockResolvedValue(1);
 
-    expect(await controller.remove('1')).toBeUndefined();
-  });
-
-  it('should throw an error for invalid CPF', async () => {
-    const customerDto = new CreateCustomerDto({ ...baseDto, cpf: 'invalid' });
-
-    jest
-      .spyOn(service, 'create')
-      .mockRejectedValue(new BadRequestException('Invalid CPF'));
-
-    await expect(controller.create(customerDto)).rejects.toThrow(
-      BadRequestException,
-    );
-  });
-
-  it('should throw an error for invalid CNPJ', async () => {
-    const customerDto = new CreateCustomerDto({ ...baseDto, cnpj: 'invalid' });
-
-    jest
-      .spyOn(service, 'create')
-      .mockRejectedValue(new BadRequestException('Invalid CNPJ'));
-
-    await expect(controller.create(customerDto)).rejects.toThrow(
-      BadRequestException,
-    );
+    expect(await controller.remove('1')).toBe(1);
   });
 });
