@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { ContractsModule } from './contracts/contracts.module';
 
 @Module({
   imports: [
@@ -12,9 +13,10 @@ import { ConfigModule } from '@nestjs/config';
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
-      entities: [],
+      autoLoadEntities: true,
       synchronize: true,
     }),
+    ContractsModule,
   ],
 })
 export class AppModule {}
