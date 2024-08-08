@@ -4,10 +4,25 @@ import { CustomersService } from '../customers.service';
 import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { CustomerEntity } from '../entities/customer.entity';
 import { BadRequestException } from '@nestjs/common';
+import { CustomerStatus } from '../../common/enums/customer-status.enum';
+import { ICreateCustomerDto } from '../../common/interfaces/create-customer.dto.interface';
 
 describe('CustomersController', () => {
   let controller: CustomersController;
   let service: CustomersService;
+
+  const baseDto: ICreateCustomerDto = {
+    name: 'Test Customer',
+    email: 'test@example.com',
+    phone: '123456789',
+    address: '123 Test St',
+    status: CustomerStatus.DENTRO_DO_PRAZO,
+  };
+
+  const baseEntity: CustomerEntity = {
+    id: 1,
+    ...baseDto,
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -17,7 +32,7 @@ describe('CustomersController', () => {
           provide: CustomersService,
           useValue: {
             create: jest.fn(),
-            findAll: jest.fn(),
+            findAllWithFilters: jest.fn(),
             findOne: jest.fn(),
             update: jest.fn(),
             remove: jest.fn(),
@@ -35,18 +50,12 @@ describe('CustomersController', () => {
   });
 
   it('should create a customer with valid CPF', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Test Customer',
-      email: 'test@example.com',
-      phone: '123456789',
-      address: '123 Test St',
-      cpf: '12345678909',
-    };
+    const customerDto = new CreateCustomerDto({
+      ...baseDto,
+      cpf: '11144477735',
+    });
 
-    const result: CustomerEntity = {
-      id: 1,
-      ...customerDto,
-    };
+    const result = { ...baseEntity, cpf: '11144477735' };
 
     jest.spyOn(service, 'create').mockResolvedValue(result);
 
@@ -54,18 +63,12 @@ describe('CustomersController', () => {
   });
 
   it('should create a customer with valid CNPJ', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Test Customer',
-      email: 'test@example.com',
-      phone: '123456789',
-      address: '123 Test St',
+    const customerDto = new CreateCustomerDto({
+      ...baseDto,
       cnpj: '12345678000195',
-    };
+    });
 
-    const result: CustomerEntity = {
-      id: 1,
-      ...customerDto,
-    };
+    const result = { ...baseEntity, cnpj: '12345678000195' };
 
     jest.spyOn(service, 'create').mockResolvedValue(result);
 
@@ -73,49 +76,41 @@ describe('CustomersController', () => {
   });
 
   it('should return all customers', async () => {
-    const result: CustomerEntity[] = [
-      {
-        id: 1,
-        name: 'Test Customer',
-        email: 'test@example.com',
-        phone: '123456789',
-        address: '123 Test St',
-        cpf: '12345678909',
-      },
-    ];
+    const result: CustomerEntity[] = [baseEntity];
 
-    jest.spyOn(service, 'findAll').mockResolvedValue(result);
+    jest.spyOn(service, 'findAllWithFilters').mockResolvedValue(result);
 
-    expect(await controller.findAll()).toEqual(result);
+    const customers = await controller.findAll();
+    expect(customers).toEqual(result);
+  });
+
+  it('should return all customers with a specific status', async () => {
+    const result: CustomerEntity[] = [baseEntity];
+
+    jest.spyOn(service, 'findAllWithFilters').mockResolvedValue(result);
+
+    expect(await controller.findAll(CustomerStatus.DENTRO_DO_PRAZO)).toEqual(
+      result,
+    );
   });
 
   it('should return a single customer', async () => {
-    const result: CustomerEntity = {
-      id: 1,
-      name: 'Test Customer',
-      email: 'test@example.com',
-      phone: '123456789',
-      address: '123 Test St',
-      cpf: '12345678909',
-    };
+    jest.spyOn(service, 'findOne').mockResolvedValue(baseEntity);
 
-    jest.spyOn(service, 'findOne').mockResolvedValue(result);
-
-    expect(await controller.findOne('1')).toEqual(result);
+    expect(await controller.findOne('1')).toEqual(baseEntity);
   });
 
   it('should update a customer with valid CPF', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Updated Customer',
-      email: 'updated@example.com',
-      phone: '987654321',
-      address: '456 Updated St',
-      cpf: '12345678909',
-    };
+    const customerDto = new CreateCustomerDto({
+      ...baseDto,
+      cpf: '11144477735',
+      status: CustomerStatus.PAGO,
+    });
 
-    const result: CustomerEntity = {
-      id: 1,
-      ...customerDto,
+    const result = {
+      ...baseEntity,
+      cpf: '11144477735',
+      status: CustomerStatus.PAGO,
     };
 
     jest.spyOn(service, 'update').mockResolvedValue(result);
@@ -124,17 +119,16 @@ describe('CustomersController', () => {
   });
 
   it('should update a customer with valid CNPJ', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Updated Customer',
-      email: 'updated@example.com',
-      phone: '987654321',
-      address: '456 Updated St',
+    const customerDto = new CreateCustomerDto({
+      ...baseDto,
       cnpj: '12345678000195',
-    };
+      status: CustomerStatus.PAGO,
+    });
 
-    const result: CustomerEntity = {
-      id: 1,
-      ...customerDto,
+    const result = {
+      ...baseEntity,
+      cnpj: '12345678000195',
+      status: CustomerStatus.PAGO,
     };
 
     jest.spyOn(service, 'update').mockResolvedValue(result);
@@ -143,19 +137,13 @@ describe('CustomersController', () => {
   });
 
   it('should delete a customer', async () => {
-    jest.spyOn(service, 'remove').mockResolvedValue();
+    jest.spyOn(service, 'remove').mockResolvedValue(undefined);
 
     expect(await controller.remove('1')).toBeUndefined();
   });
 
   it('should throw an error for invalid CPF', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Test Customer',
-      email: 'test@example.com',
-      phone: '123456789',
-      address: '123 Test St',
-      cpf: 'invalid',
-    };
+    const customerDto = new CreateCustomerDto({ ...baseDto, cpf: 'invalid' });
 
     jest
       .spyOn(service, 'create')
@@ -167,13 +155,7 @@ describe('CustomersController', () => {
   });
 
   it('should throw an error for invalid CNPJ', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Test Customer',
-      email: 'test@example.com',
-      phone: '123456789',
-      address: '123 Test St',
-      cnpj: 'invalid',
-    };
+    const customerDto = new CreateCustomerDto({ ...baseDto, cnpj: 'invalid' });
 
     jest
       .spyOn(service, 'create')

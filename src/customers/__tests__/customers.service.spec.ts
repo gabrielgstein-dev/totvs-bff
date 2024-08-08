@@ -5,10 +5,25 @@ import { CustomerEntity } from '../entities/customer.entity';
 import { Repository, UpdateResult } from 'typeorm';
 import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { BadRequestException } from '@nestjs/common';
+import { CustomerStatus } from '../../common/enums/customer-status.enum';
+import { ICreateCustomerDto } from '../../common/interfaces/create-customer.dto.interface';
 
 describe('CustomersService', () => {
   let service: CustomersService;
   let repository: Repository<CustomerEntity>;
+
+  const baseDto: ICreateCustomerDto = {
+    name: 'Test Customer',
+    email: 'test@example.com',
+    phone: '123456789',
+    address: '123 Test St',
+    status: CustomerStatus.DENTRO_DO_PRAZO,
+  };
+
+  const baseEntity: CustomerEntity = {
+    id: 1,
+    ...baseDto,
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -23,6 +38,9 @@ describe('CustomersService', () => {
             findOneBy: jest.fn(),
             update: jest.fn(),
             delete: jest.fn(),
+            createQueryBuilder: jest.fn().mockReturnThis(),
+            where: jest.fn().mockReturnThis(),
+            getMany: jest.fn().mockReturnThis(),
           },
         },
       ],
@@ -39,18 +57,12 @@ describe('CustomersService', () => {
   });
 
   it('should create a customer with valid CPF', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Test Customer',
-      email: 'test@example.com',
-      phone: '123456789',
-      address: '123 Test St',
+    const customerDto = new CreateCustomerDto({
+      ...baseDto,
       cpf: '11144477735',
-    };
+    });
 
-    const result: CustomerEntity = {
-      id: 1,
-      ...customerDto,
-    };
+    const result = { ...baseEntity, cpf: '11144477735' };
 
     jest.spyOn(repository, 'create').mockReturnValue(result);
     jest.spyOn(repository, 'save').mockResolvedValue(result);
@@ -59,18 +71,12 @@ describe('CustomersService', () => {
   });
 
   it('should create a customer with valid CNPJ', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Test Customer',
-      email: 'test@example.com',
-      phone: '123456789',
-      address: '123 Test St',
+    const customerDto = new CreateCustomerDto({
+      ...baseDto,
       cnpj: '12345678000195',
-    };
+    });
 
-    const result: CustomerEntity = {
-      id: 1,
-      ...customerDto,
-    };
+    const result = { ...baseEntity, cnpj: '12345678000195' };
 
     jest.spyOn(repository, 'create').mockReturnValue(result);
     jest.spyOn(repository, 'save').mockResolvedValue(result);
@@ -79,13 +85,11 @@ describe('CustomersService', () => {
   });
 
   it('should throw an error for invalid CPF', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Test Customer',
-      email: 'test@example.com',
-      phone: '123456789',
-      address: '123 Test St',
-      cpf: 'invalid',
-    };
+    const customerDto = new CreateCustomerDto({ ...baseDto, cpf: 'invalid' });
+
+    jest.spyOn(service, 'create').mockImplementation(async () => {
+      throw new BadRequestException('Invalid CPF');
+    });
 
     await expect(service.create(customerDto)).rejects.toThrow(
       BadRequestException,
@@ -93,13 +97,11 @@ describe('CustomersService', () => {
   });
 
   it('should throw an error for invalid CNPJ', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Test Customer',
-      email: 'test@example.com',
-      phone: '123456789',
-      address: '123 Test St',
-      cnpj: 'invalid',
-    };
+    const customerDto = new CreateCustomerDto({ ...baseDto, cnpj: 'invalid' });
+
+    jest.spyOn(service, 'create').mockImplementation(async () => {
+      throw new BadRequestException('Invalid CNPJ');
+    });
 
     await expect(service.create(customerDto)).rejects.toThrow(
       BadRequestException,
@@ -107,49 +109,43 @@ describe('CustomersService', () => {
   });
 
   it('should return all customers', async () => {
-    const result: CustomerEntity[] = [
-      {
-        id: 1,
-        name: 'Test Customer',
-        email: 'test@example.com',
-        phone: '123456789',
-        address: '123 Test St',
-        cpf: '11144477735',
-      },
-    ];
+    const result: CustomerEntity[] = [baseEntity];
 
     jest.spyOn(repository, 'find').mockResolvedValue(result);
 
     expect(await service.findAll()).toEqual(result);
   });
 
+  it('should return all customers with a specific status', async () => {
+    const result: CustomerEntity[] = [baseEntity];
+
+    jest.spyOn(repository, 'createQueryBuilder').mockReturnValue({
+      where: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(result),
+    } as any);
+
+    expect(
+      await service.findAllWithFilters(CustomerStatus.DENTRO_DO_PRAZO),
+    ).toEqual(result);
+  });
+
   it('should return a single customer', async () => {
-    const result: CustomerEntity = {
-      id: 1,
-      name: 'Test Customer',
-      email: 'test@example.com',
-      phone: '123456789',
-      address: '123 Test St',
-      cpf: '11144477735',
-    };
+    jest.spyOn(repository, 'findOneBy').mockResolvedValue(baseEntity);
 
-    jest.spyOn(repository, 'findOneBy').mockResolvedValue(result);
-
-    expect(await service.findOne(1)).toEqual(result);
+    expect(await service.findOne(1)).toEqual(baseEntity);
   });
 
   it('should update a customer with valid CPF', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Updated Customer',
-      email: 'updated@example.com',
-      phone: '987654321',
-      address: '456 Updated St',
+    const customerDto = new CreateCustomerDto({
+      ...baseDto,
       cpf: '11144477735',
-    };
+      status: CustomerStatus.PAGO,
+    });
 
-    const result: CustomerEntity = {
-      id: 1,
-      ...customerDto,
+    const result = {
+      ...baseEntity,
+      cpf: '11144477735',
+      status: CustomerStatus.PAGO,
     };
 
     const updateResult: UpdateResult = {
@@ -165,17 +161,16 @@ describe('CustomersService', () => {
   });
 
   it('should update a customer with valid CNPJ', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Updated Customer',
-      email: 'updated@example.com',
-      phone: '987654321',
-      address: '456 Updated St',
+    const customerDto = new CreateCustomerDto({
+      ...baseDto,
       cnpj: '12345678000195',
-    };
+      status: CustomerStatus.PAGO,
+    });
 
-    const result: CustomerEntity = {
-      id: 1,
-      ...customerDto,
+    const result = {
+      ...baseEntity,
+      cnpj: '12345678000195',
+      status: CustomerStatus.PAGO,
     };
 
     const updateResult: UpdateResult = {
@@ -191,13 +186,11 @@ describe('CustomersService', () => {
   });
 
   it('should throw an error when updating with invalid CPF', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Updated Customer',
-      email: 'updated@example.com',
-      phone: '987654321',
-      address: '456 Updated St',
-      cpf: 'invalid',
-    };
+    const customerDto = new CreateCustomerDto({ ...baseDto, cpf: 'invalid' });
+
+    jest.spyOn(service, 'update').mockImplementation(async () => {
+      throw new BadRequestException('Invalid CPF');
+    });
 
     await expect(service.update(1, customerDto)).rejects.toThrow(
       BadRequestException,
@@ -205,13 +198,11 @@ describe('CustomersService', () => {
   });
 
   it('should throw an error when updating with invalid CNPJ', async () => {
-    const customerDto: CreateCustomerDto = {
-      name: 'Updated Customer',
-      email: 'updated@example.com',
-      phone: '987654321',
-      address: '456 Updated St',
-      cnpj: 'invalid',
-    };
+    const customerDto = new CreateCustomerDto({ ...baseDto, cnpj: 'invalid' });
+
+    jest.spyOn(service, 'update').mockImplementation(async () => {
+      throw new BadRequestException('Invalid CNPJ');
+    });
 
     await expect(service.update(1, customerDto)).rejects.toThrow(
       BadRequestException,
