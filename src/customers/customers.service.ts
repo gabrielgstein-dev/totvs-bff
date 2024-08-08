@@ -1,15 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CustomerEntity } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
-import { CustomerStatus } from '../common/enums/customer-status.enum';
+import { ContractStatus } from '../common/enums/contract-status.enum';
 
 @Injectable()
 export class CustomersService {
   constructor(
     @InjectRepository(CustomerEntity)
-    private customersRepository: Repository<CustomerEntity>,
+    private readonly customersRepository: Repository<CustomerEntity>,
   ) {}
 
   async create(createCustomerDto: CreateCustomerDto): Promise<CustomerEntity> {
@@ -17,33 +17,51 @@ export class CustomersService {
     return this.customersRepository.save(customer);
   }
 
-  async findAll(): Promise<CustomerEntity[]> {
-    return this.customersRepository.find();
-  }
-
-  async findAllWithFilters(status?: CustomerStatus): Promise<CustomerEntity[]> {
-    let query = this.customersRepository.createQueryBuilder('customer');
+  async findAll(status?: ContractStatus): Promise<CustomerEntity[]> {
+    const queryBuilder = this.customersRepository
+      .createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.contracts', 'contract');
 
     if (status) {
-      query = query.where('customer.status = :status', { status });
+      queryBuilder.where('contract.status = :status', { status });
     }
 
-    return query.getMany();
+    return queryBuilder.getMany();
   }
 
   async findOne(id: number): Promise<CustomerEntity> {
-    return this.customersRepository.findOneBy({ id });
+    const customer = await this.customersRepository.findOne({
+      where: { id },
+      relations: ['contracts'],
+    });
+
+    if (!customer) {
+      throw new NotFoundException(`Customer not found`);
+    }
+
+    return customer;
   }
 
   async update(
     id: number,
-    createCustomerDto: CreateCustomerDto,
+    updateCustomerDto: CreateCustomerDto,
   ): Promise<CustomerEntity> {
-    await this.customersRepository.update(id, createCustomerDto);
-    return this.customersRepository.findOneBy({ id });
+    await this.customersRepository.update(id, updateCustomerDto);
+    const updatedCustomer = await this.customersRepository.findOneBy({ id });
+
+    if (!updatedCustomer) {
+      throw new NotFoundException(`Customer not found`);
+    }
+
+    return updatedCustomer;
   }
 
-  async remove(id: number): Promise<void> {
-    await this.customersRepository.delete(id);
+  async remove(id: number): Promise<number> {
+    const result = await this.customersRepository.delete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`Customer not found`);
+    }
+    return result.affected;
   }
 }

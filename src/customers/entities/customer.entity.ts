@@ -1,5 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
-import { CustomerStatus } from '../../common/enums/customer-status.enum';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { ContractEntity } from '../../contracts/entities/contract.entity';
 
 @Entity('customers')
 export class CustomerEntity {
@@ -9,7 +9,7 @@ export class CustomerEntity {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ unique: true })
   email: string;
 
   @Column()
@@ -18,16 +18,12 @@ export class CustomerEntity {
   @Column()
   address: string;
 
-  @Column({ nullable: true })
+  @Column({ unique: true, nullable: true })
   cpf?: string;
 
-  @Column({ nullable: true })
+  @Column({ unique: true, nullable: true })
   cnpj?: string;
 
-  @Column({
-    type: 'enum',
-    enum: CustomerStatus,
-    default: CustomerStatus.DENTRO_DO_PRAZO,
-  })
-  status: CustomerStatus;
+  @OneToMany(() => ContractEntity, (contract) => contract.customer)
+  contracts: ContractEntity[];
 }

@@ -11,7 +11,7 @@ import {
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { CustomerEntity } from './entities/customer.entity';
-import { CustomerStatus } from '../common/enums/customer-status.enum';
+import { ContractStatus } from '../common/enums/contract-status.enum';
 
 @Controller('customers')
 export class CustomersController {
@@ -26,9 +26,9 @@ export class CustomersController {
 
   @Get()
   async findAll(
-    @Query('status') status?: CustomerStatus,
+    @Query('status') status?: ContractStatus,
   ): Promise<CustomerEntity[]> {
-    return this.customersService.findAllWithFilters(status);
+    return this.customersService.findAll(status);
   }
 
   @Get(':id')
@@ -45,7 +45,7 @@ export class CustomersController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id') id: string): Promise<number> {
     return this.customersService.remove(+id);
   }
 }

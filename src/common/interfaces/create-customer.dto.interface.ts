@@ -1,5 +1,3 @@
-import { CustomerStatus } from '../enums/customer-status.enum';
-
 export interface ICreateCustomerDto {
   name: string;
   email: string;
@@ -7,5 +5,4 @@ export interface ICreateCustomerDto {
   address: string;
   cpf?: string;
   cnpj?: string;
-  status: CustomerStatus;
 }

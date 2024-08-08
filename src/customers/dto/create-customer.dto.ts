@@ -1,6 +1,5 @@
-import { IsNotEmpty, IsEmail, IsOptional, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsEmail, IsOptional } from 'class-validator';
 import { IsCpfOrCnpj } from '../../common/validators/is-cpf-or-cnpj.decorator';
-import { CustomerStatus } from '../../common/enums/customer-status.enum';
 import { ICreateCustomerDto } from '../../common/interfaces/create-customer.dto.interface';
 
 export class CreateCustomerDto implements ICreateCustomerDto {
@@ -24,9 +23,6 @@ export class CreateCustomerDto implements ICreateCustomerDto {
   @IsCpfOrCnpj()
   readonly cnpj?: string;
 
-  @IsEnum(CustomerStatus)
-  readonly status: CustomerStatus;
-
   constructor(data: ICreateCustomerDto) {
     this.name = data.name;
     this.email = data.email;
@@ -34,6 +30,5 @@ export class CreateCustomerDto implements ICreateCustomerDto {
     this.address = data.address;
     this.cpf = data.cpf;
     this.cnpj = data.cnpj;
-    this.status = data.status;
   }
 }
