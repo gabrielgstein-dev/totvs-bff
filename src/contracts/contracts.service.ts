@@ -11,16 +11,16 @@ export class ContractsService {
     private contractsRepository: Repository<ContractsEntity>,
   ) {}
 
-  create(createContractDto: CreateContractDto): Promise<ContractsEntity> {
+  async create(createContractDto: CreateContractDto): Promise<ContractsEntity> {
     const contract = this.contractsRepository.create(createContractDto);
     return this.contractsRepository.save(contract);
   }
 
-  findAll(): Promise<ContractsEntity[]> {
+  async findAll(): Promise<ContractsEntity[]> {
     return this.contractsRepository.find();
   }
 
-  findOne(id: number): Promise<ContractsEntity> {
+  async findOne(id: number): Promise<ContractsEntity> {
     return this.contractsRepository.findOneBy({ id });
   }
 
