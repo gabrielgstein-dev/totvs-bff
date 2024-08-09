@@ -1,23 +1,23 @@
-# Use an official Node runtime as a parent image
+# Use uma imagem oficial do Node como imagem base
 FROM node:18
 
-# Set the working directory
+# Defina o diretório de trabalho
 WORKDIR /usr/src/app
 
-# Copy the package.json and package-lock.json files
+# Copie os arquivos package.json e package-lock.json
 COPY package*.json ./
 
-# Install any needed packages
+# Instale as dependências necessárias
 RUN npm install
 
-# Copy the rest of the application code
+# Copie o restante do código da aplicação
 COPY . .
 
-# Build the app
+# Construa a aplicação
 RUN npm run build
 
-# Make port 3000 available to the world outside this container
+# Exponha a porta 3000 para o mundo fora deste container
 EXPOSE 3000
 
-# Define the command to run the app
+# Defina o comando para executar a aplicação
 CMD ["node", "dist/main"]

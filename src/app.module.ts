@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { ContractsModule } from './contracts/contracts.module';
-import { CustomersModule } from './customers/customers.module';
+import { ContractsModule } from './modules/contracts/contracts.module';
+import { CustomersModule } from './modules/customers/customers.module';
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { CustomersModule } from './customers/customers.module';
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_NAME,
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: false,
     }),
     ContractsModule,
     CustomersModule,

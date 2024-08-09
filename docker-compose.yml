@@ -16,7 +16,7 @@ services:
 
   app:
     build: .
-    command: npm run start:dev
+    command: bash -c "if [ ! -d ./src/data/migrations ]; then npm run migration:complete && npm run start; else npm run start; fi"
     depends_on:
       - db
     volumes:
@@ -31,6 +31,8 @@ services:
       DATABASE_NAME: ${DATABASE_NAME}
     env_file:
       - .env
+    depends_on:
+      - db
 
 volumes:
   postgres-data:
