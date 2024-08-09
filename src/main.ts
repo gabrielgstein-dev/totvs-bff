@@ -1,17 +1,18 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ContractEntity } from './modules/contracts/entities/contract.entity';
-import { ContractsService } from './modules/contracts/contracts.service';
-import { ContractsController } from './modules/contracts/contracts.controller';
-import { CustomerEntity } from './modules/customers/entities/customer.entity';
-import { CustomersModule } from './modules/customers/customers.module';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module';
 
-@Module({
-  imports: [
-    TypeOrmModule.forFeature([ContractEntity, CustomerEntity]),
-    CustomersModule,
-  ],
-  providers: [ContractsService],
-  controllers: [ContractsController],
-})
-export class ContractsModule {}
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const config = new DocumentBuilder()
+    .setTitle('Contracts and Customers API')
+    .setDescription('API for managing contracts and customers')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
+  await app.listen(3000);
+}
+bootstrap();
