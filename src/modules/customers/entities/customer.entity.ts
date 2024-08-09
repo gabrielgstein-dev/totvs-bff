@@ -9,14 +9,8 @@ export class CustomerEntity {
   @Column()
   name: string;
 
-  @Column({ unique: true })
-  email: string;
-
   @Column()
   phone: string;
-
-  @Column()
-  address: string;
 
   @Column({ unique: true, nullable: true })
   cpf?: string;
