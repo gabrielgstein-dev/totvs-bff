@@ -27,9 +27,9 @@ export class ContractsController {
   }
 
   @ApiOperation({ summary: 'Get all contracts of a customer' })
-  @ApiParam({ name: 'id', required: true, description: 'Customer ID' })
-  @Get('/user/:id')
-  async findAll(@Param('id') id: string): Promise<ContractEntity[]> {
+  @ApiParam({ name: 'userId', required: true, description: 'Customer ID' })
+  @Get('/user/:userId')
+  async findAll(@Param('userId') id: string): Promise<ContractEntity[]> {
     return this.contractsService.findAll(+id);
   }
 
@@ -55,7 +55,7 @@ export class ContractsController {
   @ApiOperation({ summary: 'Makes a logical deletion in current contract' })
   @ApiParam({ name: 'id', required: true, description: 'Contract ID' })
   @ApiParam({ name: 'userId', required: true, description: 'Customer ID' })
-  @Delete(':id/:userId/cancel')
+  @Delete(':id/user/:userId')
   async cancel(
     @Param('id') id: string,
     @Param('userId') userId: string,

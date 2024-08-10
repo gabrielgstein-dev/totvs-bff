@@ -5,9 +5,7 @@ import { ICreateCustomerDto } from '../../common/interfaces/create-customer.dto.
 describe('CreateCustomerDto', () => {
   const baseDto: ICreateCustomerDto = {
     name: 'Test Customer',
-    email: 'test@example.com',
     phone: '123456789',
-    address: '123 Test St',
     cpf: '89482569040',
   };
 

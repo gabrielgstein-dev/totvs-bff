@@ -14,17 +14,13 @@ describe('CustomersService', () => {
   const mockCustomerEntity: CustomerEntity = {
     id: 1,
     name: 'Test Customer',
-    email: 'test@example.com',
     phone: '123456789',
-    address: '123 Test St',
     contracts: [],
   };
 
   const mockCreateCustomerDto: CreateCustomerDto = new CreateCustomerDto({
     name: 'Test Customer',
-    email: 'test@example.com',
     phone: '123456789',
-    address: '123 Test St',
   });
 
   beforeEach(async () => {

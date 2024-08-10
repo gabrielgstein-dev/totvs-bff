@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Body,
   Param,
   Delete,
   Put,
@@ -19,6 +18,7 @@ import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { CustomerEntity } from './entities/customer.entity';
 import { ContractStatus } from '../common/enums/contract-status.enum';
+import { CpfCnpj } from '../common/decorators/cpf-cnpj.decorator';
 
 @ApiTags('customers')
 @Controller('customers')
@@ -29,7 +29,7 @@ export class CustomersController {
   @ApiBody({ type: CreateCustomerDto })
   @Post()
   async create(
-    @Body() createCustomerDto: CreateCustomerDto,
+    @CpfCnpj() createCustomerDto: CreateCustomerDto,
   ): Promise<CustomerEntity> {
     return this.customersService.create(createCustomerDto);
   }
@@ -63,7 +63,7 @@ export class CustomersController {
   @Put(':id')
   async update(
     @Param('id') id: string,
-    @Body() createCustomerDto: CreateCustomerDto,
+    @CpfCnpj() createCustomerDto: CreateCustomerDto,
   ): Promise<CustomerEntity> {
     return this.customersService.update(+id, createCustomerDto);
   }
